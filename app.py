@@ -1,6 +1,11 @@
 import streamlit as st
 import os
 import math
+import pandas as pd
+import matplotlib.pyplot as plt
+import time
+from io import BytesIO
+import base64
 
 st.set_page_config(
     page_title="Bond Calculator",
@@ -209,8 +214,319 @@ def find_coupon_given_ytm(price, ytm, years, periods, face_value):
     
     return annual_coupon_rate
 
+# Define a function to create interactive matplotlib plots with Streamlit
+def create_interactive_plot(x_data, y_data, x_label, y_label, title, color='blue', marker='o', linestyle='-', figsize=(10, 5)):
+    fig, ax = plt.subplots(figsize=figsize)
+    ax.plot(x_data, y_data, marker=marker, linestyle=linestyle, color=color, linewidth=2)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.set_title(title)
+    ax.grid(True)
+    return fig
+
+# Load data from data folder
+@st.cache_data
+def load_financial_data():
+    data_dir = "data/datasets"
+    datasets = {}
+    
+    # Dictionary of files to load
+    files_to_load = {
+        'mk_maturity': 'mk.maturity.csv',
+        'mk_zero2': 'mk.zero2.csv',
+        'bond_prices': 'bondprices.txt',
+        'zero_prices': 'ZeroPrices.txt',
+        'yields': 'yields.txt',
+        'treasury_yields': 'treasury_yields.txt',
+        'stock_bond': 'Stock_Bond.csv'
+    }
+    
+    try:
+        # Try to load each file
+        for key, filename in files_to_load.items():
+            filepath = os.path.join(data_dir, filename)
+            if os.path.exists(filepath):
+                if filename.endswith('.txt'):
+                    datasets[key] = pd.read_csv(filepath, sep='\s+')
+                else:
+                    datasets[key] = pd.read_csv(filepath, header=0)
+        
+        # Check if we loaded at least some of the files
+        if len(datasets) > 0:
+            return datasets, True
+        else:
+            return {}, False
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return {}, False
+
+# Get real yield curve data from loaded datasets
+def get_real_yield_curve_data(datasets, date_index=5):
+    """Get real yield curve data from mk.zero2 dataset for a specific date"""
+    if 'mk_zero2' not in datasets or 'mk_maturity' not in datasets:
+        return None, None, None
+    
+    # Get maturity values
+    maturities = datasets['mk_maturity'].iloc[:, 0].values
+    
+    # Get yield values for the specified date
+    date = datasets['mk_zero2'].iloc[date_index, 0]
+    yields = datasets['mk_zero2'].iloc[date_index, 1:].values
+    
+    # Remove NaN values
+    valid_indices = ~pd.isna(yields)
+    maturities = maturities[valid_indices]
+    yields = yields[valid_indices]
+    
+    return date, maturities, yields
+
+# Get treasury yield curve data
+def get_treasury_yield_curve(datasets, date_index=0):
+    """Get treasury yield curve data for a specific date"""
+    if 'treasury_yields' not in datasets:
+        return None, None, None
+    
+    # Get the data for the specified date
+    date = datasets['treasury_yields'].iloc[date_index, 0]
+    
+    # Extract maturities and yields
+    # Convert column names to numeric values where possible
+    maturities = []
+    for col in datasets['treasury_yields'].columns[1:]:
+        if col == '1mo':
+            maturities.append(1/12)
+        elif col == '3mo':
+            maturities.append(3/12)
+        elif col == '6mo':
+            maturities.append(6/12)
+        elif col == '1yr':
+            maturities.append(1)
+        elif col == '2yr':
+            maturities.append(2)
+        elif col == '3yr':
+            maturities.append(3)
+        elif col == '5yr':
+            maturities.append(5)
+        elif col == '7yr':
+            maturities.append(7)
+        elif col == '10yr':
+            maturities.append(10)
+        elif col == '20yr':
+            maturities.append(20)
+        elif col == '30yr':
+            maturities.append(30)
+    
+    # Get yields for the date
+    yields = datasets['treasury_yields'].iloc[date_index, 1:].values
+    
+    # Convert yields to decimal
+    yields = yields / 100
+    
+    # Remove NaN values
+    valid_indices = ~pd.isna(yields)
+    maturities = [m for i, m in enumerate(maturities) if valid_indices[i]]
+    yields = yields[valid_indices]
+    
+    return date, maturities, yields
+
+# Get zero coupon bond data
+def get_zero_coupon_bond_data(datasets):
+    """Get zero coupon bond prices from the dataset"""
+    if 'zero_prices' not in datasets:
+        return None, None
+    
+    maturities = datasets['zero_prices']['maturity'].values
+    prices = datasets['zero_prices']['price'].values
+    
+    # Calculate yields (continuously compounded)
+    yields = -np.log(prices / 100) / maturities if 'np' in globals() else [-math.log(p / 100) / m for p, m in zip(prices, maturities)]
+    
+    return maturities, prices, yields
+
+# Load financial data
+datasets, data_loaded = load_financial_data()
+
 # Define tabs
-tab1, tab2, tab3, tab4 = st.tabs(["Basic Calculator", "Advanced Functions", "Educational Resources", "Chat Interface"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Basic Calculator", "Advanced Functions", "Real Data Analysis", "Educational Resources", "Chat Interface"])
+
+with tab3:
+    st.header("Real Data Analysis")
+    
+    analysis_type = st.selectbox(
+        "Select analysis type",
+        ["Yield Curve Analysis", "Treasury Yield Analysis", "Zero-Coupon Bond Analysis"],
+        key="real_data_analysis_type"
+    )
+    
+    # Status message for data loading
+    if not data_loaded:
+        st.warning("⚠️ Could not load financial data. Some features might not work correctly.")
+    
+    if analysis_type == "Yield Curve Analysis":
+        st.subheader("Yield Curve Analysis from Real Data")
+        
+        if data_loaded and 'mk_zero2' in datasets:
+            # Get available dates
+            dates = datasets['mk_zero2'].iloc[:, 0].values
+            date_index = st.slider("Select Date", 0, len(dates)-1, 5, 1, key="yield_curve_date")
+            selected_date = dates[date_index]
+            
+            # Get yield curve data
+            date, maturities, yields = get_real_yield_curve_data(datasets, date_index)
+            
+            if date is not None:
+                # Create a plot
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.plot(maturities, yields*100, 'b-o', linewidth=2)
+                ax.set_xlabel('Maturity (years)')
+                ax.set_ylabel('Yield (%)')
+                ax.set_title(f'Yield Curve on {date}')
+                ax.grid(True)
+                
+                # Display interactive chart
+                st.pyplot(fig)
+                
+                # Calculate forward rates
+                forward_rates = []
+                for i in range(1, len(yields)):
+                    t1 = maturities[i-1]
+                    t2 = maturities[i]
+                    r1 = yields[i-1]
+                    r2 = yields[i]
+                    forward_rate = (r2*t2 - r1*t1)/(t2 - t1)
+                    forward_rates.append(forward_rate)
+                
+                forward_maturities = [(maturities[i] + maturities[i-1])/2 for i in range(1, len(maturities))]
+                
+                # Create forward rates plot
+                fig2, ax2 = plt.subplots(figsize=(10, 5))
+                ax2.plot(maturities, yields*100, 'b-o', linewidth=2, label='Spot Rates')
+                ax2.plot(forward_maturities, [r*100 for r in forward_rates], 'r-o', linewidth=2, label='Forward Rates')
+                ax2.set_xlabel('Maturity (years)')
+                ax2.set_ylabel('Rate (%)')
+                ax2.set_title(f'Spot and Forward Rates on {date}')
+                ax2.grid(True)
+                ax2.legend()
+                
+                st.pyplot(fig2)
+                
+                # Display data as table
+                data_table = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Spot Rate (%)': [y*100 for y in yields]
+                })
+                
+                if len(forward_rates) > 0:
+                    forward_df = pd.DataFrame({
+                        'Period': [f"{maturities[i]:.1f}-{maturities[i+1]:.1f}" for i in range(len(forward_rates))],
+                        'Forward Rate (%)': [r*100 for r in forward_rates]
+                    })
+                    
+                    st.write("### Spot Rates")
+                    st.dataframe(data_table)
+                    
+                    st.write("### Forward Rates")
+                    st.dataframe(forward_df)
+                else:
+                    st.write("### Yield Curve Data")
+                    st.dataframe(data_table)
+            else:
+                st.error("Could not retrieve yield curve data for the selected date.")
+        else:
+            st.error("Yield curve data files (mk.zero2.csv, mk.maturity.csv) not found.")
+    
+    elif analysis_type == "Treasury Yield Analysis":
+        st.subheader("Treasury Yield Analysis from Real Data")
+        
+        if data_loaded and 'treasury_yields' in datasets:
+            # Get available dates
+            dates = datasets['treasury_yields'].iloc[:, 0].values
+            date_index = st.slider("Select Date", 0, len(dates)-1, 0, 1, key="treasury_date")
+            selected_date = dates[date_index]
+            
+            # Get treasury yield curve data
+            date, maturities, yields = get_treasury_yield_curve(datasets, date_index)
+            
+            if date is not None:
+                # Create a plot
+                fig, ax = plt.subplots(figsize=(10, 5))
+                ax.plot(maturities, [y*100 for y in yields], 'r-o', linewidth=2)
+                ax.set_xlabel('Maturity (years)')
+                ax.set_ylabel('Yield (%)')
+                ax.set_title(f'Treasury Yield Curve on {date}')
+                ax.grid(True)
+                
+                # Display interactive chart
+                st.pyplot(fig)
+                
+                # Display data as table
+                data_table = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Yield (%)': [y*100 for y in yields]
+                })
+                
+                st.write("### Treasury Yield Data")
+                st.dataframe(data_table)
+            else:
+                st.error("Could not retrieve treasury yield data for the selected date.")
+        else:
+            st.error("Treasury yield data file (treasury_yields.txt) not found.")
+    
+    elif analysis_type == "Zero-Coupon Bond Analysis":
+        st.subheader("Zero-Coupon Bond Analysis from Real Data")
+        
+        if data_loaded and 'zero_prices' in datasets:
+            # Get zero coupon bond data
+            maturities, prices, yields = get_zero_coupon_bond_data(datasets)
+            
+            if maturities is not None:
+                # Create plots
+                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+                
+                # Price plot
+                ax1.plot(maturities, prices, 'b-o', linewidth=2)
+                ax1.set_xlabel('Maturity (years)')
+                ax1.set_ylabel('Price')
+                ax1.set_title('Zero-Coupon Bond Prices')
+                ax1.grid(True)
+                
+                # Yield plot
+                ax2.plot(maturities, [y*100 for y in yields], 'r-o', linewidth=2)
+                ax2.set_xlabel('Maturity (years)')
+                ax2.set_ylabel('Yield (%)')
+                ax2.set_title('Zero-Coupon Bond Yields')
+                ax2.grid(True)
+                
+                plt.tight_layout()
+                
+                # Display interactive chart
+                st.pyplot(fig)
+                
+                # Display data as table
+                data_table = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Price': prices,
+                    'Yield (%)': [y*100 for y in yields]
+                })
+                
+                st.write("### Zero-Coupon Bond Data")
+                st.dataframe(data_table)
+                
+                # Explanation
+                st.write("""
+                **Zero-Coupon Bonds** do not pay periodic interest but are sold at a discount to their face value. 
+                The yield is the return an investor receives by holding the bond until maturity.
+                
+                The yield for a zero-coupon bond can be calculated as:
+                
+                Yield = -ln(Price/Face Value) / Maturity
+                
+                where the Price is typically quoted as a percentage of face value.
+                """)
+            else:
+                st.error("Could not retrieve zero-coupon bond data.")
+        else:
+            st.error("Zero-coupon bond data file (ZeroPrices.txt) not found.")
 
 with tab2:
     st.header("Advanced Bond Functions")
@@ -443,6 +759,36 @@ with tab1:
         
         price_change = -modified_duration * 0.01 * price
         st.write(f"If yield increases by 1%, bond price changes by approximately ${price_change:.2f}")
+        
+    # Interactive Price vs Yield chart
+    st.subheader("Price vs Yield Curve")
+    
+    # Generate yield values around the current yield
+    min_yield = max(0.1, yield_rate * 100 - 2)
+    max_yield = yield_rate * 100 + 2
+    yields_for_plot = [y/100 for y in range(int(min_yield * 10), int(max_yield * 10) + 1)]
+    prices_for_plot = [calculate_bond_price(face_value, coupon_rate, years, payments_per_year, y) for y in yields_for_plot]
+    
+    # Create plot
+    fig = create_interactive_plot(
+        [y * 100 for y in yields_for_plot],
+        prices_for_plot,
+        "Yield to Maturity (%)",
+        "Bond Price ($)",
+        "Bond Price vs Yield to Maturity",
+        color="blue"
+    )
+    
+    # Add marker for current price/yield
+    plt.axhline(y=price, color='r', linestyle='--', alpha=0.7)
+    plt.axvline(x=yield_rate * 100, color='g', linestyle='--', alpha=0.7)
+    plt.plot(yield_rate * 100, price, 'ro', markersize=8)
+    plt.annotate(f"Current: ({yield_rate*100:.2f}%, ${price:.2f})", 
+                xy=(yield_rate*100, price), 
+                xytext=(yield_rate*100+0.2, price+20),
+                arrowprops=dict(facecolor='black', shrink=0.05, width=1.5, headwidth=8, alpha=0.7))
+    
+    st.pyplot(fig)
 
     # Bond details
     st.header("Bond Cash Flows")
