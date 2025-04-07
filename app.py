@@ -919,7 +919,8 @@ with tab2:
         Yield = -ln(Price/Face Value) / t
         """)
 
-with tab3:
+
+with tab5:
     st.header("Chat with the Bond Calculator")
     
     # Initialize chat history
