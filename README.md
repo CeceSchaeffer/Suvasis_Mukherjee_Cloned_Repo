@@ -41,7 +41,7 @@ A comprehensive bond calculator and analytics platform built with Streamlit. Thi
 ## Getting Started
 
 ### Online Access
-The application is deployed at [bond-analytics.streamlit.app](https://bond-analytics.streamlit.app/) - visit this link to use the app without installation.
+The application is deployed at [bondanalytics.streamlit.app](https://bondanalytics.streamlit.app) - visit this link to use the app without installation.
 
 ### Local Installation
 
