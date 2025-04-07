@@ -115,4 +115,4 @@ Forward Rate(t₁,t₂) = (Spot Rate(t₂) × t₂ - Spot Rate(t₁) × t₁) / 
 Contributions to enhance the application are welcome. Please feel free to submit a pull request or open an issue to discuss potential improvements.
 
 ## License
-This project is available under the MIT License.
+This project is available under the dronomy.io License.
