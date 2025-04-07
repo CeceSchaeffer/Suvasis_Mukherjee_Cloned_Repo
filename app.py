@@ -375,6 +375,87 @@ datasets, data_loaded = load_financial_data()
 # Define tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["Basic Calculator", "Advanced Functions", "Real Data Analysis", "Educational Resources", "Chat Interface"])
 
+with tab4:
+    st.header("Educational Resources")
+    
+    st.header("Bond Calculation Concepts")
+    
+    with st.expander("Yield to Maturity (YTM)"):
+        st.write("""
+        **Yield to Maturity (YTM)** is the total return anticipated on a bond if held until it matures. It's calculated by 
+        finding the interest rate that makes the present value of all future cash flows equal to the current price of the bond.
+        
+        For a bond with semiannual coupon payments, the formula is:
+        
+        Price = C/r + (Par - C/r) * (1 + r)^(-2T)
+        
+        Where:
+        - C = semiannual coupon payment
+        - r = semiannual yield to maturity
+        - T = time to maturity in years
+        - Par = par value of the bond
+        """)
+    
+    with st.expander("Bond Duration"):
+        st.write("""
+        **Bond Duration** measures the sensitivity of a bond's price to interest rate changes. It represents the weighted 
+        average time to receive the bond's cash flows.
+        
+        Macaulay Duration is calculated as:
+        
+        Duration = Σ(t × PV(CFt)) / Price
+        
+        Where:
+        - t = time to each cash flow
+        - PV(CFt) = present value of the cash flow at time t
+        - Price = bond price
+        
+        **Modified Duration** adjusts Macaulay Duration to estimate the percentage price change for a 1% change in yield:
+        
+        Modified Duration = Macaulay Duration / (1 + YTM/n)
+        
+        Where n is the number of coupon payments per year.
+        """)
+    
+    with st.expander("Forward Rates"):
+        st.write("""
+        **Forward Rates** represent the interest rate for a future period that is implied by the current term structure of interest rates.
+        
+        The forward rate between times t₁ and t₂ is calculated as:
+        
+        Forward Rate(t₁,t₂) = (Spot Rate(t₂) × t₂ - Spot Rate(t₁) × t₁) / (t₂ - t₁)
+        
+        Where Spot Rate(t) is the yield to maturity of a zero-coupon bond maturing at time t.
+        """)
+    
+    with st.expander("Yield Curve"):
+        st.write("""
+        A **Yield Curve** shows the relationship between interest rates (or yields) and time to maturity for debt securities 
+        with equal credit quality but different maturity dates.
+        
+        The shape of the yield curve can indicate economic forecasts and expectations of future interest rate changes:
+        1. **Normal (Upward Sloping)**: Long-term yields higher than short-term yields, indicating economic expansion
+        2. **Inverted (Downward Sloping)**: Short-term yields higher than long-term yields, often predicting recession
+        3. **Flat**: Similar yields for short and long-term maturities
+        4. **Humped**: Medium-term yields higher than both short and long-term yields
+        """)
+    
+    with st.expander("Zero-Coupon Bonds"):
+        st.write("""
+        **Zero-Coupon Bonds** don't pay periodic interest but are sold at a discount to their face value. The investor's return
+        comes from the difference between the purchase price and the face value at maturity.
+        
+        The price of a zero-coupon bond is:
+        
+        Price = Face Value / (1 + YTM)^t
+        
+        Where t is the time to maturity in years.
+        
+        The yield of a zero-coupon bond can also be calculated using continuous compounding:
+        
+        Yield = -ln(Price/Face Value) / t
+        """)
+
 with tab3:
     st.header("Real Data Analysis")
     
@@ -840,84 +921,6 @@ with tab1:
     # Display cash flows table
     st.table(cash_flows)
 
-with tab2:
-    st.header("Bond Calculation Concepts")
-    
-    with st.expander("Yield to Maturity (YTM)"):
-        st.write("""
-        **Yield to Maturity (YTM)** is the total return anticipated on a bond if held until it matures. It's calculated by 
-        finding the interest rate that makes the present value of all future cash flows equal to the current price of the bond.
-        
-        For a bond with semiannual coupon payments, the formula is:
-        
-        Price = C/r + (Par - C/r) * (1 + r)^(-2T)
-        
-        Where:
-        - C = semiannual coupon payment
-        - r = semiannual yield to maturity
-        - T = time to maturity in years
-        - Par = par value of the bond
-        """)
-    
-    with st.expander("Bond Duration"):
-        st.write("""
-        **Bond Duration** measures the sensitivity of a bond's price to interest rate changes. It represents the weighted 
-        average time to receive the bond's cash flows.
-        
-        Macaulay Duration is calculated as:
-        
-        Duration = Σ(t × PV(CFt)) / Price
-        
-        Where:
-        - t = time to each cash flow
-        - PV(CFt) = present value of the cash flow at time t
-        - Price = bond price
-        
-        **Modified Duration** adjusts Macaulay Duration to estimate the percentage price change for a 1% change in yield:
-        
-        Modified Duration = Macaulay Duration / (1 + YTM/n)
-        
-        Where n is the number of coupon payments per year.
-        """)
-    
-    with st.expander("Forward Rates"):
-        st.write("""
-        **Forward Rates** represent the interest rate for a future period that is implied by the current term structure of interest rates.
-        
-        The forward rate between times t₁ and t₂ is calculated as:
-        
-        Forward Rate(t₁,t₂) = (Spot Rate(t₂) × t₂ - Spot Rate(t₁) × t₁) / (t₂ - t₁)
-        
-        Where Spot Rate(t) is the yield to maturity of a zero-coupon bond maturing at time t.
-        """)
-    
-    with st.expander("Yield Curve"):
-        st.write("""
-        A **Yield Curve** shows the relationship between interest rates (or yields) and time to maturity for debt securities 
-        with equal credit quality but different maturity dates.
-        
-        The shape of the yield curve can indicate economic forecasts and expectations of future interest rate changes:
-        1. **Normal (Upward Sloping)**: Long-term yields higher than short-term yields, indicating economic expansion
-        2. **Inverted (Downward Sloping)**: Short-term yields higher than long-term yields, often predicting recession
-        3. **Flat**: Similar yields for short and long-term maturities
-        4. **Humped**: Medium-term yields higher than both short and long-term yields
-        """)
-    
-    with st.expander("Zero-Coupon Bonds"):
-        st.write("""
-        **Zero-Coupon Bonds** don't pay periodic interest but are sold at a discount to their face value. The investor's return
-        comes from the difference between the purchase price and the face value at maturity.
-        
-        The price of a zero-coupon bond is:
-        
-        Price = Face Value / (1 + YTM)^t
-        
-        Where t is the time to maturity in years.
-        
-        The yield of a zero-coupon bond can also be calculated using continuous compounding:
-        
-        Yield = -ln(Price/Face Value) / t
-        """)
 
 
 with tab5:
