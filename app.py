@@ -284,10 +284,10 @@ with tab2:
         st.subheader("Bond Pricing with Spot Rates")
         
         # Bond parameters
-        face_value = st.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100)
-        coupon_rate = st.slider("Annual Coupon Rate (%)", min_value=0.0, max_value=20.0, value=5.0, step=0.1) / 100
-        years = st.slider("Years to Maturity", min_value=1, max_value=10, value=5)
-        payments_per_year = st.selectbox("Payments per Year", [1, 2, 4, 12], index=1)
+        face_value = st.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100, key="spot_face_value")
+        coupon_rate = st.slider("Annual Coupon Rate (%)", min_value=0.0, max_value=20.0, value=5.0, step=0.1, key="spot_coupon_rate") / 100
+        years = st.slider("Years to Maturity", min_value=1, max_value=10, value=5, key="spot_years")
+        payments_per_year = st.selectbox("Payments per Year", [1, 2, 4, 12], index=1, key="spot_payments_per_year")
         
         st.write("### Spot Rate Term Structure")
         st.write("Enter spot rates for each cash flow (these are typically different from a single YTM):")
@@ -304,11 +304,11 @@ with tab2:
             if i % 2 == 0:
                 with col1:
                     rate = st.slider(f"Spot Rate at t={t:.2f} years (%)", 0.0, 15.0, 
-                                    min(4.0 + t*0.2, 15.0), 0.1) / 100
+                                    min(4.0 + t*0.2, 15.0), 0.1, key=f"spot_rate_{i}") / 100
             else:
                 with col2:
                     rate = st.slider(f"Spot Rate at t={t:.2f} years (%)", 0.0, 15.0, 
-                                    min(4.0 + t*0.2, 15.0), 0.1) / 100
+                                    min(4.0 + t*0.2, 15.0), 0.1, key=f"spot_rate_{i}") / 100
             spot_rates.append(rate)
         
         # Calculate coupon payments
@@ -345,11 +345,11 @@ with tab2:
         st.subheader("Find Yield to Maturity (YTM)")
         
         # Input parameters
-        face_value = st.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100)
-        price = st.number_input("Bond Price ($)", min_value=10.0, max_value=face_value*2.0, value=950.0, step=10.0)
-        coupon_rate = st.slider("Annual Coupon Rate (%)", min_value=0.0, max_value=20.0, value=5.0, step=0.1) / 100
-        years = st.slider("Years to Maturity", min_value=1, max_value=30, value=10)
-        payments_per_year = st.selectbox("Payments per Year", [1, 2, 4, 12], index=1)
+        face_value = st.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100, key="ytm_face_value")
+        price = st.number_input("Bond Price ($)", min_value=10.0, max_value=10000.0, value=950.0, step=10.0, key="ytm_price")
+        coupon_rate = st.slider("Annual Coupon Rate (%)", min_value=0.0, max_value=20.0, value=5.0, step=0.1, key="ytm_coupon_rate") / 100
+        years = st.slider("Years to Maturity", min_value=1, max_value=30, value=10, key="ytm_years")
+        payments_per_year = st.selectbox("Payments per Year", [1, 2, 4, 12], index=1, key="ytm_payments_per_year")
         
         # Find YTM
         ytm = find_ytm_using_bisection(price, face_value, coupon_rate, years, payments_per_year)
@@ -381,11 +381,11 @@ with tab2:
         st.subheader("Find Coupon Rate Given Price and YTM")
         
         # Input parameters
-        face_value = st.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100)
-        price = st.number_input("Bond Price ($)", min_value=10.0, max_value=face_value*2.0, value=1000.0, step=10.0)
-        ytm = st.slider("Yield to Maturity (%)", min_value=0.0, max_value=20.0, value=4.0, step=0.1) / 100
-        years = st.slider("Years to Maturity", min_value=1, max_value=30, value=10)
-        payments_per_year = st.selectbox("Payments per Year", [1, 2, 4, 12], index=1)
+        face_value = st.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100, key="coupon_face_value")
+        price = st.number_input("Bond Price ($)", min_value=10.0, max_value=10000.0, value=1000.0, step=10.0, key="coupon_price")
+        ytm = st.slider("Yield to Maturity (%)", min_value=0.0, max_value=20.0, value=4.0, step=0.1, key="coupon_ytm") / 100
+        years = st.slider("Years to Maturity", min_value=1, max_value=30, value=10, key="coupon_years")
+        payments_per_year = st.selectbox("Payments per Year", [1, 2, 4, 12], index=1, key="coupon_payments_per_year")
         
         # Find coupon rate
         coupon_rate = find_coupon_given_ytm(price, ytm, years, payments_per_year, face_value)
@@ -409,11 +409,11 @@ with tab1:
     st.sidebar.header("Basic Parameters")
 
     # Bond parameters inputs
-    face_value = st.sidebar.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100)
-    coupon_rate = st.sidebar.slider("Annual Coupon Rate (%)", min_value=0.0, max_value=20.0, value=5.0, step=0.1) / 100
-    years = st.sidebar.slider("Years to Maturity", min_value=1, max_value=30, value=10)
-    payments_per_year = st.sidebar.selectbox("Payments per Year", [1, 2, 4, 12], index=1)
-    yield_rate = st.sidebar.slider("Yield to Maturity (%)", min_value=0.0, max_value=20.0, value=4.0, step=0.1) / 100
+    face_value = st.sidebar.number_input("Face Value ($)", min_value=100, max_value=10000, value=1000, step=100, key="basic_face_value")
+    coupon_rate = st.sidebar.slider("Annual Coupon Rate (%)", min_value=0.0, max_value=20.0, value=5.0, step=0.1, key="basic_coupon_rate") / 100
+    years = st.sidebar.slider("Years to Maturity", min_value=1, max_value=30, value=10, key="basic_years")
+    payments_per_year = st.sidebar.selectbox("Payments per Year", [1, 2, 4, 12], index=1, key="basic_payments_per_year")
+    yield_rate = st.sidebar.slider("Yield to Maturity (%)", min_value=0.0, max_value=20.0, value=4.0, step=0.1, key="basic_yield_rate") / 100
 
     # Calculate results
     price = calculate_bond_price(face_value, coupon_rate, years, payments_per_year, yield_rate)
