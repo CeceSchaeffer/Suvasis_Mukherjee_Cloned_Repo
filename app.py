@@ -2,10 +2,6 @@ import streamlit as st
 import os
 import math
 import pandas as pd
-import matplotlib.pyplot as plt
-import time
-from io import BytesIO
-import base64
 
 st.set_page_config(
     page_title="Bond Calculator",
@@ -214,15 +210,13 @@ def find_coupon_given_ytm(price, ytm, years, periods, face_value):
     
     return annual_coupon_rate
 
-# Define a function to create interactive matplotlib plots with Streamlit
-def create_interactive_plot(x_data, y_data, x_label, y_label, title, color='blue', marker='o', linestyle='-', figsize=(10, 5)):
-    fig, ax = plt.subplots(figsize=figsize)
-    ax.plot(x_data, y_data, marker=marker, linestyle=linestyle, color=color, linewidth=2)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_title(title)
-    ax.grid(True)
-    return fig
+# Function to create interactive charts using Streamlit's built-in chart functions
+def create_streamlit_chart(x_data, y_data, x_label, y_label, title):
+    chart_data = pd.DataFrame({
+        x_label: x_data,
+        y_label: y_data
+    })
+    return chart_data
 
 # Load data from data folder
 @st.cache_data
@@ -339,7 +333,7 @@ def get_zero_coupon_bond_data(datasets):
     prices = datasets['zero_prices']['price'].values
     
     # Calculate yields (continuously compounded)
-    yields = -np.log(prices / 100) / maturities if 'np' in globals() else [-math.log(p / 100) / m for p, m in zip(prices, maturities)]
+    yields = [-math.log(p / 100) / m for p, m in zip(prices, maturities)]
     
     return maturities, prices, yields
 
@@ -375,16 +369,13 @@ with tab3:
             date, maturities, yields = get_real_yield_curve_data(datasets, date_index)
             
             if date is not None:
-                # Create a plot
-                fig, ax = plt.subplots(figsize=(10, 5))
-                ax.plot(maturities, yields*100, 'b-o', linewidth=2)
-                ax.set_xlabel('Maturity (years)')
-                ax.set_ylabel('Yield (%)')
-                ax.set_title(f'Yield Curve on {date}')
-                ax.grid(True)
+                # Create a chart using Streamlit's built-in chart
+                chart_data = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Yield (%)': yields*100
+                })
                 
-                # Display interactive chart
-                st.pyplot(fig)
+                st.line_chart(chart_data.set_index('Maturity (years)'))
                 
                 # Calculate forward rates
                 forward_rates = []
@@ -398,17 +389,29 @@ with tab3:
                 
                 forward_maturities = [(maturities[i] + maturities[i-1])/2 for i in range(1, len(maturities))]
                 
-                # Create forward rates plot
-                fig2, ax2 = plt.subplots(figsize=(10, 5))
-                ax2.plot(maturities, yields*100, 'b-o', linewidth=2, label='Spot Rates')
-                ax2.plot(forward_maturities, [r*100 for r in forward_rates], 'r-o', linewidth=2, label='Forward Rates')
-                ax2.set_xlabel('Maturity (years)')
-                ax2.set_ylabel('Rate (%)')
-                ax2.set_title(f'Spot and Forward Rates on {date}')
-                ax2.grid(True)
-                ax2.legend()
+                # Create two separate charts for comparison
+                st.write("### Spot Rates vs. Forward Rates")
                 
-                st.pyplot(fig2)
+                # Convert to DataFrames for Streamlit charts
+                spot_rates_df = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Spot Rate (%)': yields*100
+                })
+                
+                forward_rates_df = pd.DataFrame({
+                    'Maturity (years)': forward_maturities,
+                    'Forward Rate (%)': [r*100 for r in forward_rates]
+                })
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("Spot Rates")
+                    st.line_chart(spot_rates_df.set_index('Maturity (years)'))
+                    
+                with col2:
+                    st.write("Forward Rates")
+                    st.line_chart(forward_rates_df.set_index('Maturity (years)'))
                 
                 # Display data as table
                 data_table = pd.DataFrame({
@@ -448,16 +451,13 @@ with tab3:
             date, maturities, yields = get_treasury_yield_curve(datasets, date_index)
             
             if date is not None:
-                # Create a plot
-                fig, ax = plt.subplots(figsize=(10, 5))
-                ax.plot(maturities, [y*100 for y in yields], 'r-o', linewidth=2)
-                ax.set_xlabel('Maturity (years)')
-                ax.set_ylabel('Yield (%)')
-                ax.set_title(f'Treasury Yield Curve on {date}')
-                ax.grid(True)
+                # Create a chart using Streamlit's built-in chart
+                chart_data = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Yield (%)': [y*100 for y in yields]
+                })
                 
-                # Display interactive chart
-                st.pyplot(fig)
+                st.line_chart(chart_data.set_index('Maturity (years)'))
                 
                 # Display data as table
                 data_table = pd.DataFrame({
@@ -480,27 +480,28 @@ with tab3:
             maturities, prices, yields = get_zero_coupon_bond_data(datasets)
             
             if maturities is not None:
-                # Create plots
-                fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+                # Create charts using Streamlit's built-in chart
+                col1, col2 = st.columns(2)
                 
-                # Price plot
-                ax1.plot(maturities, prices, 'b-o', linewidth=2)
-                ax1.set_xlabel('Maturity (years)')
-                ax1.set_ylabel('Price')
-                ax1.set_title('Zero-Coupon Bond Prices')
-                ax1.grid(True)
+                # Price chart
+                price_data = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Price': prices
+                })
                 
-                # Yield plot
-                ax2.plot(maturities, [y*100 for y in yields], 'r-o', linewidth=2)
-                ax2.set_xlabel('Maturity (years)')
-                ax2.set_ylabel('Yield (%)')
-                ax2.set_title('Zero-Coupon Bond Yields')
-                ax2.grid(True)
+                # Yield chart
+                yield_data = pd.DataFrame({
+                    'Maturity (years)': maturities,
+                    'Yield (%)': [y*100 for y in yields]
+                })
                 
-                plt.tight_layout()
+                with col1:
+                    st.write("### Zero-Coupon Bond Prices")
+                    st.line_chart(price_data.set_index('Maturity (years)'))
                 
-                # Display interactive chart
-                st.pyplot(fig)
+                with col2:
+                    st.write("### Zero-Coupon Bond Yields")
+                    st.line_chart(yield_data.set_index('Maturity (years)'))
                 
                 # Display data as table
                 data_table = pd.DataFrame({
@@ -769,26 +770,18 @@ with tab1:
     yields_for_plot = [y/100 for y in range(int(min_yield * 10), int(max_yield * 10) + 1)]
     prices_for_plot = [calculate_bond_price(face_value, coupon_rate, years, payments_per_year, y) for y in yields_for_plot]
     
-    # Create plot
-    fig = create_interactive_plot(
-        [y * 100 for y in yields_for_plot],
-        prices_for_plot,
-        "Yield to Maturity (%)",
-        "Bond Price ($)",
-        "Bond Price vs Yield to Maturity",
-        color="blue"
-    )
+    # Create DataFrame for Streamlit chart
+    yield_price_data = pd.DataFrame({
+        'Yield to Maturity (%)': [y * 100 for y in yields_for_plot],
+        'Bond Price ($)': prices_for_plot
+    })
     
-    # Add marker for current price/yield
-    plt.axhline(y=price, color='r', linestyle='--', alpha=0.7)
-    plt.axvline(x=yield_rate * 100, color='g', linestyle='--', alpha=0.7)
-    plt.plot(yield_rate * 100, price, 'ro', markersize=8)
-    plt.annotate(f"Current: ({yield_rate*100:.2f}%, ${price:.2f})", 
-                xy=(yield_rate*100, price), 
-                xytext=(yield_rate*100+0.2, price+20),
-                arrowprops=dict(facecolor='black', shrink=0.05, width=1.5, headwidth=8, alpha=0.7))
+    # Note: we can't add markers or annotations with Streamlit's built-in charts
+    # But we can show the current values separately
+    st.line_chart(yield_price_data.set_index('Yield to Maturity (%)'))
     
-    st.pyplot(fig)
+    # Show the current point
+    st.info(f"Current point: Yield = {yield_rate*100:.2f}%, Price = ${price:.2f}")
 
     # Bond details
     st.header("Bond Cash Flows")
