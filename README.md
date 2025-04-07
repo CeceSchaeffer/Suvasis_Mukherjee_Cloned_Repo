@@ -1,129 +1,118 @@
-# Bond Calculator
+# Bond Analytics
 
-A comprehensive bond calculator with multiple interfaces for financial calculations.
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bond-analytics.streamlit.app/)
+
+A comprehensive bond calculator and analytics platform built with Streamlit. This application provides tools for bond pricing, yield analysis, duration calculations, and real financial data visualization.
 
 ## Features
 
-- Calculate bond price given coupon rate, maturity, and yield to maturity
-- Find yield to maturity given bond price, coupon rate, and maturity
-- Calculate bond duration and modified duration
-- Generate price vs. yield curves
-- Analyze the relationship between coupon rates and duration
-- Access to real financial data for yield curves, treasury data, and stock correlations
-- Upload custom datasets
+### Basic Bond Calculator
+- Calculate bond prices based on par value, coupon rate, and yield to maturity
+- Compute current yield, Macaulay duration, and modified duration
+- Visualize cash flows and price-yield relationships
+- Analyze how changes in yield affect bond prices
 
-## Installation
+### Advanced Bond Functions
+- Forward rate and spot rate calculations with custom rate functions
+- Bond pricing using different spot rates for each cash flow
+- Finding yield to maturity (YTM) using numerical methods
+- Determining required coupon rates for specific pricing scenarios
+
+### Real Data Analysis
+- Interactive yield curve visualization from actual market data
+- Treasury yield curve analysis across different time periods
+- Zero-coupon bond price and yield analysis
+- Visualization of the relationship between spot rates and forward rates
+
+### Educational Resources
+- Detailed explanations of key bond concepts
+- Interactive learning materials on:
+  - Yield to Maturity (YTM)
+  - Bond Duration
+  - Forward Rates
+  - Yield Curves
+  - Zero-Coupon Bonds
+
+### Interactive Chat Interface
+- Ask questions about bond calculations and concepts
+- Get answers with formulas and explanations
+- Learn bond market fundamentals through conversation
+
+## Getting Started
+
+### Online Access
+The application is deployed at [bond-analytics.streamlit.app](https://bond-analytics.streamlit.app/) - visit this link to use the app without installation.
+
+### Local Installation
 
 1. Clone the repository:
-```
-git clone <repository-url>
-cd enhanced_bond_calculator
+```bash
+git clone https://github.com/dronomyio/bond_analytics.git
+cd bond_analytics
 ```
 
-2. Install the required dependencies:
-```
+2. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-## Usage Options
-
-### Chat Interface
-
-Run the interactive chat-based interface:
-
-```
-python bond_chat_cli.py
-```
-
-This provides a conversation-style interface where you can:
-- Ask questions about bond calculations
-- Run specific calculations with parameters
-- View real financial data
-- Generate visualizations
-- Upload custom datasets
-
-Example commands in the chat interface:
-- `calculate bond coupon 5% maturity 10 ytm 4%`
-- `find ytm price 950 coupon 5% maturity 10`
-- `show yield curve`
-- `help`
-
-### Command-Line Calculator
-
-Run the simple command-line calculator:
-
-```
-python bond_calculator_cli.py
-```
-
-This will display a menu with the following options:
-1. Calculate bond value
-2. Find yield to maturity
-3. Calculate duration
-4. Exit
-
-### Sample Calculations
-
-To see examples of various bond calculations, run:
-
-```
-python sample_bond_calculations.py
-```
-
-This script demonstrates:
-- Bond price calculation
-- Yield to maturity calculation
-- Duration calculation
-- Price vs. yield curve generation
-- Duration vs. coupon rate analysis
-
-### Web Interface (requires Streamlit)
-
-For a full web-based UI with advanced features:
-
-```
+3. Run the application:
+```bash
 streamlit run app.py
 ```
 
-## Data Management
+### Docker Deployment
 
-The application can use financial datasets from the `data/datasets` directory. You can:
-
-1. Use the included sample datasets
-2. Upload custom datasets through the chat interface
-3. Add your own files directly to the data directory
-
-## Files
-
-- `bond_chat_cli.py`: Interactive chat interface for bond calculations
-- `bond_calculator_cli.py`: Simple command-line interface
-- `sample_bond_calculations.py`: Script with examples of bond calculations
-- `app.py`: Streamlit web application for full visual interface
-- `requirements.txt`: Dependencies for the project
-- `data/`: Directory containing financial datasets
-
-## Dockerfile
-
-A Dockerfile is included to containerize the application if needed:
-
-```
-docker build -t bond-calculator .
-docker run -p 8505:8505 bond-calculator
+```bash
+docker build -t bond-analytics .
+docker run -p 8505:8505 bond-analytics
 ```
 
-## Bond Formulas Used
+## Data Sources
+The application includes datasets for:
+- Historical yield curves
+- Treasury yield data
+- Zero-coupon bond prices
+- Stock and bond market data
 
-- **Bond Price**: `P = C/r + (Par - C/r) * (1 + r)^(-2T)`
-- **Duration**: The weighted average time to receive the bond's cash flows
-- **Modified Duration**: `MD = Duration / (1 + r)`
-- **Yield to Maturity**: The interest rate that makes the present value of future cash flows equal to the current price
-- **Forward Rate**: `F(t₁,t₂) = (R(t₂)·t₂ - R(t₁)·t₁) / (t₂ - t₁)`
+All data is stored in the `data/datasets` directory.
 
+## Key Bond Formulas
+
+### Bond Price
+For a bond with semiannual payments:
+```
+P = C/r + (Par - C/r) * (1 + r)^(-2T)
+```
 Where:
-- `P` = Bond price
-- `C` = Semiannual coupon payment
-- `r` = Semiannual yield to maturity
-- `T` = Time to maturity in years
-- `Par` = Par value of the bond
-- `R(t)` = Spot rate for maturity t
-- `F(t₁,t₂)` = Forward rate between times t₁ and t₂
+- P = Bond price
+- C = Semiannual coupon payment
+- r = Semiannual yield to maturity
+- T = Time to maturity in years
+- Par = Par value of the bond
+
+### Macaulay Duration
+```
+Duration = Σ(t × PV(CFt)) / Price
+```
+Where:
+- t = Time to each cash flow
+- PV(CFt) = Present value of the cash flow at time t
+- Price = Bond price
+
+### Modified Duration
+```
+Modified Duration = Macaulay Duration / (1 + YTM/n)
+```
+Where n is the number of coupon payments per year.
+
+### Forward Rate
+```
+Forward Rate(t₁,t₂) = (Spot Rate(t₂) × t₂ - Spot Rate(t₁) × t₁) / (t₂ - t₁)
+```
+
+## Contributing
+Contributions to enhance the application are welcome. Please feel free to submit a pull request or open an issue to discuss potential improvements.
+
+## License
+This project is available under the MIT License.
