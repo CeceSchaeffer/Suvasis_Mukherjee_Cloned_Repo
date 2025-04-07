@@ -221,7 +221,30 @@ def create_streamlit_chart(x_data, y_data, x_label, y_label, title):
 # Load data from data folder
 @st.cache_data
 def load_financial_data():
-    data_dir = "data/datasets"
+    # Try multiple potential data paths to handle different deployment environments
+    data_paths = [
+        "data/datasets",                               # Local development path
+        "/app/data/datasets",                          # Docker path
+        "data",                                        # Streamlit Cloud path root
+        "data/data/datasets",                          # Nested directory structure
+        "../data/datasets",                            # Relative path
+        "/mount/src/bond_analytics/data/datasets",     # Streamlit Cloud absolute path
+        "/mount/src/bond_analytics/data/data/datasets" # Streamlit Cloud with nested structure
+    ]
+    
+    data_dir = None
+    # Find first valid data directory
+    for path in data_paths:
+        if os.path.exists(path):
+            data_dir = path
+            break
+    
+    # If no directory found, default to the local path
+    if data_dir is None:
+        data_dir = "data/datasets"
+        st.warning(f"⚠️ No valid data directory found. Trying {data_dir}")
+    else:
+        st.write(f"Loading data from: {data_dir}")
     datasets = {}
     
     # Dictionary of files to load
@@ -247,8 +270,17 @@ def load_financial_data():
         
         # Check if we loaded at least some of the files
         if len(datasets) > 0:
+            st.success(f"✅ Successfully loaded {len(datasets)} datasets")
+            # List the loaded datasets
+            if len(datasets) < len(files_to_load):
+                missing = [name for name, file in files_to_load.items() if name not in datasets]
+                st.warning(f"⚠️ Could not find these datasets: {', '.join(missing)}")
             return datasets, True
         else:
+            st.error("❌ Failed to load any datasets")
+            # List all attempted files and paths
+            for name, file in files_to_load.items():
+                st.write(f"Tried to load: {os.path.join(data_dir, file)}")
             return {}, False
     except Exception as e:
         st.error(f"Error loading data: {e}")
