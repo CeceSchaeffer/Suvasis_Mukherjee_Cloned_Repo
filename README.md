@@ -67,6 +67,22 @@ streamlit run app.py  --server.port 8509 #or any other port
 ```bash
 docker build -t bond-analytics .
 docker run -p 8505:8505 bond-analytics
+
+Example:
+docker run -p 8508:8508 bond-analytics --question 4
+
+usage: bond_calculator.py [-h]
+                          [--question {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}]
+                          [--all] [--report]
+
+Bond Calculator
+
+options:
+  -h, --help            show this help message and exit
+  --question {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}
+                        Specific question to solve (1-20)
+  --all                 Run all calculations
+  --report              Generate a comprehensive report
 ```
 
 ## Data Sources
