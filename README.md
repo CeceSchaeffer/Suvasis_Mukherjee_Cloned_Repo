@@ -60,7 +60,10 @@ pip install -r requirements.txt
    
 ```
 mkdir output
-python bond_calculator.py --question 1 (upto 20)
+python bond_calculator.py --question 1 (upto 20)  or
+python bond_calculator.py --all  or
+python bond_calculator.py --report (for all 20 questions)
+
 
 usage: python bond_calculator.py [-h]
                           [--question {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}]
