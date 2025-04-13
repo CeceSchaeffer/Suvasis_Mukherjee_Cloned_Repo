@@ -56,8 +56,10 @@ cd bond_analytics
 pip install -r requirements.txt
 ```
 
-3. Run the bond_calculator.py from command line
+3. Run the bond_calculator.py from command line,
+   
 ```
+mkdir output
 python bond_calculator.py --question 1 (upto 20)
 
 usage: python bond_calculator.py [-h]
