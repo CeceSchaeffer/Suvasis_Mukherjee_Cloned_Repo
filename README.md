@@ -56,7 +56,25 @@ cd bond_analytics
 pip install -r requirements.txt
 ```
 
-3. Run the application:  to access as app
+3. Run the bond_calculator.py from command line
+```
+python bond_calculator.py --question 1 (upto 20)
+
+usage: python bond_calculator.py [-h]
+                          [--question {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}]
+                          [--all] [--report]
+
+Bond Calculator
+
+options:
+  -h, --help            show this help message and exit
+  --question {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}
+                        Specific question to solve (1-20)
+  --all                 Run all calculations
+  --report              Generate a comprehensive report
+```
+
+4. Run the application:  to access as app -- just to show the capabilities, doesn't show question wise solutions
 ```bash
 streamlit run app.py  or
 streamlit run app.py  --server.port 8509 #or any other port
@@ -71,18 +89,6 @@ docker run -p 8505:8505 bond-analytics
 Example: you will see the png file.
 docker run -p 8508:8508 bond-analytics --question 4
 
-usage: bond_calculator.py [-h]
-                          [--question {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}]
-                          [--all] [--report]
-
-Bond Calculator
-
-options:
-  -h, --help            show this help message and exit
-  --question {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}
-                        Specific question to solve (1-20)
-  --all                 Run all calculations
-  --report              Generate a comprehensive report
 ```
 
 ## Data Sources
