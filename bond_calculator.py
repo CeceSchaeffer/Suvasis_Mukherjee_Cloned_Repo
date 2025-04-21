@@ -45,6 +45,9 @@ class BondCalculator:
         
         # (a) Calculate the yield to maturity of a bond maturing in 20 years
         def calculate_spot_rate(T):
+            if T == 0: # included by Sree
+                return forward_rate(0)
+            
             integral, _ = integrate.quad(forward_rate, 0, T)
             return integral / T
         
@@ -93,6 +96,9 @@ class BondCalculator:
         
         # (a) Calculate the yield to maturity of a bond maturing in 8 years
         def calculate_spot_rate(T):
+            if T == 0: # included by Sree
+                return forward_rate(0)
+            
             integral, _ = integrate.quad(forward_rate, 0, T)
             return integral / T
         
@@ -106,6 +112,7 @@ class BondCalculator:
         plt.figure(figsize=(10, 6))
         t_values = np.linspace(0, 30, 300)
         forward_rates = [forward_rate(t) for t in t_values]
+        #spot_rates = [calculate_spot_rate(t) for t in t_values] # changed by Sree
         spot_rates = [calculate_spot_rate(t) if t > 0 else forward_rate(0) for t in t_values]
         
         plt.plot(t_values, forward_rates, 'b-', label='Forward Rate')
@@ -444,6 +451,121 @@ class BondCalculator:
         }
         
         return result
+
+    # ==========================================================================================
+    # A par $1,000 zero-coupon bond that matures in 5 years sells for $828. Assume that there is a constant continuously compounded forward rate r.
+    # added by Sree (found different problem in other version of book)
+    def solve_question8_alt(self):
+        """
+        Solve Question 8 alternate version about Forward Rate and Net Return variation with time.
+        """
+        # Given data for the zero-coupon bond
+        par = 1000  # Par value
+        price = 828  # Initial price of the bond
+        T = 5  # Time to maturity (5 years)
+        T_remaining = 4 # after 1 year time remaining
+
+        # (a) What is the continuously compounded forward rate r?
+        
+        def compute_continuous_forward_rate(price, par, T):
+            """
+            Computes the continuously compounded forward rate for a zero-coupon bond.
+
+            Parameters:
+            - price: current price of bond 
+            - par: par value of the bond
+            - T: time to maturity in years
+
+            Returns:
+            - r: continuously compounded forward rate
+            """
+            
+            r = -np.log(price / par) / T
+            return r
+
+        r = compute_continuous_forward_rate(price, par, T)
+
+        # (b) Suppose that 1 year later the forward rate r is still constant but has changed to be 0.042. Now what is the price of the bond?
+       
+        def price_zero_coupon_bond(par, r, T_remaining):
+            """
+            Computes the price of a zero-coupon bond using continuously compounded interest.
+
+            Parameters:
+            - par: face value of bond 
+            - r: continuously compounded forward rate
+            - T_remaining: Time remaining to maturity in years
+
+            Returns:
+            - price: current price of bond
+            """
+            price = par * np.exp(-r * T_remaining)
+            return price
+
+        price_sold = price_zero_coupon_bond(par, r, T_remaining)
+
+        # (c) If you bought the bond for the original price of $828 and sold it 1 year later for the price computed in part (b), 
+        #then what is the net return?
+
+        def compute_net_return(price_bought, price_sold):
+            """
+            Computes the net return from buying and selling a bond.
+
+            Parameters:
+            - price_bought: price at which the bond was originally purchased
+            - price_sold: price at which the bond was sold later
+        
+            Returns:
+            - net_return: percentage of income after deducting price bought from price sold  
+            """
+            net_return = (price_sold - price_bought) / price_bought
+            return net_return
+
+        net_return = compute_net_return(price_bought=price, price_sold=price_sold)
+
+        def plot_return_vs_forward_rate(P0=828, FV=1000, T0=5, T1=4, save_path="solution8_alt_forward_vs_returns_plot.png"):
+            """
+            Plots Net Return and Yield to Maturity vs Forward Rate for a zero-coupon bond.
+
+            Parameters:
+            - P0: Initial purchase price
+            - FV: Face value
+            - T0: Initial maturity in years (before 1 year passes)
+            - T1: Time to maturity after 1 year passes
+            - save_path: Path to save the plot
+            """
+            r_vals = np.linspace(0.01, 0.10, 200)  # YTM from 1% to 10%
+            prices = FV * np.exp(-r_vals * T)      # Zero-coupon bond price formula
+
+            plt.figure(figsize=(10, 6))
+            plt.plot(prices, r_vals * 100, color='purple', label='YTM vs Price')  # Convert YTM to percentage
+
+            plt.axvline(x=P0, color='red', linestyle='--', label=f'Market Price = ${P0:.2f}')
+            plt.axhline(y=r * 100, color='green', linestyle='--', label=f'YTM = {r * 100:.2f}%')
+    
+            plt.xlabel("Bond Price ($)")
+            plt.ylabel("Forward Rate (%)")
+            plt.title("Forward Rate vs Bond Price (Zero-Coupon Bond)")
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(self.output_dir, save_path))
+            plt.close()
+    
+            return save_path
+
+        save_path_plot = plot_return_vs_forward_rate()
+
+        # Returning results
+        result = {
+            'continuous_forward_rate': r,
+            'zero_coupon_bond_price': price_sold,
+            'net_return': net_return,
+            'plot_path': save_path_plot
+        }
+
+        return result
+    # ================================================================================================
     
     # Questions 9-13: More Bond Calculations
     
@@ -457,6 +579,8 @@ class BondCalculator:
         T = 10
         par = 1000
         ytm = 0.04 / 2  # 4% annual yield, semiannual compounding
+
+        coupon_rate = (coupon * 2) / par  # annual coupon rate (suggested by Sree)
         
         # (a) Calculate the price of the bond
         price = self.bondvalue(coupon, T, ytm, par)
@@ -464,10 +588,10 @@ class BondCalculator:
         # (b) Determine if the bond is selling above or below par
         if price > par:
             above_par = True
-            explanation = "The bond is selling above par because the coupon rate (4.2% annually) is higher than the yield to maturity (4%)."
+            explanation = f"The bond is selling above par because the annual coupon rate ({coupon_rate*100:.2f}%) is higher than the yield to maturity ({ytm*2*100:.2f}%)."  # suggested by Sree
         elif price < par:
             above_par = False
-            explanation = "The bond is selling below par because the coupon rate (4.2% annually) is lower than the yield to maturity (4%)."
+            explanation = f"The bond is selling below par because the coupon rate ({coupon_rate*100:.2f}%) is lower than the yield to maturity ({ytm*2*100:.2f}%)."  # suggested by Sree
         else:
             above_par = None
             explanation = "The bond is selling at par because the coupon rate equals the yield to maturity."
@@ -998,6 +1122,160 @@ class BondCalculator:
         }
         
         return result
+
+    # ===================================================================================================
+    def ytm_from_prices(self):
+        """
+        Solve the calculate ytm from bond prices problem (Question 21)
+        """
+    
+        from scipy.optimize import brentq
+
+        par = 1000
+        coupon = 25
+        price = 1015
+        years = 4
+        frequency = 2
+        periods = years * frequency
+
+        # Price difference function
+        def price_diff(ytm):
+            cash_flows = [coupon] * (periods - 1) + [coupon + par]
+            times = np.arange(1, periods + 1)
+            discounted = [cf / (1 + ytm) ** t for cf, t in zip(cash_flows, times)]
+            return sum(discounted) - price
+
+        # Compute YTM
+        ytm = brentq(price_diff, a=0.0001, b=1.0)
+        semiannual_ytm = ytm
+        annualized_ytm = ytm * frequency
+
+        # Plotting
+        ytm_range = np.linspace(0.0001, 0.1, 500)
+        prices = []
+
+        for y in ytm_range:
+            cash_flows = [coupon] * (periods - 1) + [coupon + par]
+            times = np.arange(1, periods + 1)
+            discounted = [cf / (1 + y) ** t for cf, t in zip(cash_flows, times)]
+            prices.append(sum(discounted))
+
+        plt.figure(figsize=(12, 6))
+        plt.plot(ytm_range * 100, prices, label='Bond Price vs YTM')
+        plt.axhline(price, color='gray', linestyle='--', label=f'Actual Price = ${price}')
+        plt.axvline(semiannual_ytm * 100, color='red', linestyle='--',
+                label=f'Semiannual YTM = {semiannual_ytm * 100:.2f}%')
+        plt.scatter([semiannual_ytm * 100], [price], color='black', zorder=5)
+
+        plt.xlabel('Semiannual YTM (%)')
+        plt.ylabel('Bond Price ($)')
+        plt.title('Bond Price vs Yield to Maturity (YTM)')
+        plt.legend()
+        plt.grid(True)
+        plot_path = os.path.join(self.output_dir, 'question_21_bond_price_vs_ytm.png')
+        plt.savefig(plot_path)
+        plt.close()
+
+        result = {
+            "semiannual_ytm_percent": semiannual_ytm * 100,
+            "annualized_ytm_percent": annualized_ytm * 100,
+            "plot_path": plot_path
+        }
+
+        return result
+
+    # =================================================================================================
+
+    def bond_duration_analysis(self):
+        """
+          Solve the calculate bond duration from cash flows problem (Question 22)
+        """
+        
+        from scipy.optimize import brentq
+        from scipy.integrate import quad
+
+        par_value = 1000
+        coupon_payment = 25
+        years = 4
+        frequency = 2
+        n_payments = years * frequency
+
+        def forward_rate(t):
+            return 0.22 + 0.005 * t - 0.004 * t**2 + 0.0003 * t**3
+
+        def integrate_forward_rate(start, end):
+            return quad(forward_rate, start, end)[0]
+
+        def bond_price(ytm):
+            total_price = 0
+            for i in range(1, n_payments + 1):
+                t = i / frequency
+                df = np.exp(-ytm * t)
+                total_price += coupon_payment * df
+            total_price += par_value * np.exp(-ytm * years)
+            return total_price
+
+        def calculate_ytm_from_price(price):
+            func = lambda ytm: bond_price(ytm) - price
+            f_a = func(0.0001)
+            f_b = func(1.0)
+            if np.sign(f_a) == np.sign(f_b):
+                print("Function has same sign at both ends. Try different bounds.")
+                return None
+            return brentq(func, 0.0001, 1.0)
+
+        def bond_duration():
+            total_price = 0
+            weighted_sum = 0
+            for i in range(1, n_payments + 1):
+                t = i / frequency
+                df = np.exp(-integrate_forward_rate(0, t))
+                cash_flow = coupon_payment
+                total_price += cash_flow * df
+                weighted_sum += t * cash_flow * df
+
+            df_par = np.exp(-integrate_forward_rate(0, years))
+            total_price += par_value * df_par
+            weighted_sum += years * par_value * df_par
+
+            return weighted_sum / total_price
+
+        def plot_ytm_vs_bond_price(ytm_range=(0.01, 0.1), num_points=100):
+            ytms = np.linspace(*ytm_range, num_points)
+            prices = [bond_price(y) for y in ytms]
+
+            plt.plot(ytms, prices, label="Bond Price vs YTM")
+            plt.axhline(par_value, color='r', linestyle='--', label="Par Value")
+
+            ytm_at_par = calculate_ytm_from_price(par_value)
+            if ytm_at_par is not None:
+                plt.axvline(ytm_at_par, color='purple', linestyle='--',
+                        label=f"YTM at Par = {ytm_at_par:.2%}")
+
+            plt.xlabel("Yield to Maturity (YTM)")
+            plt.ylabel("Bond Price ($)")
+            plt.title("YTM vs Bond Price")
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+
+            plot_path = os.path.join(self.output_dir, 'question_22_bond_price_vs_ytm.png')
+            plt.savefig(plot_path)
+            plt.close()
+
+            return plot_path
+
+        duration = bond_duration()
+        plot_path = plot_ytm_vs_bond_price()
+
+        result = {
+            "bond_duration": duration,
+            "plot_path": plot_path
+        }
+
+        return result
+
+    # =============================================================================================================
     
     def zero_coupon_bond_investment_analysis(self):
         """
@@ -1120,6 +1398,9 @@ class BondCalculator:
             'question6': self.solve_question6(),
             'question7': self.solve_question7(),
             'question8': self.solve_question8(),
+
+            # Question 8 - Alternate Version (added by Sree)
+            'question8alt': self.solve_question8_alt(),
             
             # Questions 9-13
             'question9': self.solve_question9(),
@@ -1135,7 +1416,13 @@ class BondCalculator:
             'question17': self.coupon_bond_analysis(),
             'question18': self.forward_rate_and_spot_rate(),
             'question19': self.bond_pricing_with_spot_rates(),
-            'question20': self.calculate_spot_rates_from_prices()
+            'question20': self.calculate_spot_rates_from_prices(),
+
+    # ===============================================================================================    
+            # Questions 21-22 (added by Sree)
+            'question21': self.ytm_from_prices(),
+            'question22':self.bond_duration_analysis()
+    # ===============================================================================================
         }
         
         return results
@@ -1384,6 +1671,13 @@ class BondCalculator:
             
             # Question 8
             results['question8']['ytm'], results['question8']['annual_ytm'] * 100,
+
+            # =======================================================================================
+            # Question 8 Alternate Version
+            results['question8_alt']['continuous_forward_rate'], 
+            results['question8_alt']['zero_coupon_bond_price'], 
+            results['question8_alt']['net_return'],
+            # =======================================================================================
             
             # Question 9
             results['question9']['a_price'],
@@ -1453,7 +1747,17 @@ class BondCalculator:
             results['question20']['spot_rates'][0.5],
             results['question20']['spot_rates'][1.0],
             results['question20']['spot_rates'][1.5],
-            results['question20']['spot_rates'][2.0]
+            results['question20']['spot_rates'][2.0],
+
+            # ========================================================================================================
+            # Question 21
+            results['question21']['semiannual_ytm_percent'],
+            results['question21']['annualized_ytm_percent'],
+
+            # Question 22
+            results['question22']['bond_duration']
+
+            # =====================================================================================================
         )
         
         report_path = os.path.join(self.output_dir, 'bond_calculator_report.md')
@@ -1464,7 +1768,7 @@ class BondCalculator:
 
 def main():
     parser = argparse.ArgumentParser(description='Bond Calculator')
-    parser.add_argument('--question', type=int, choices=range(1, 21), help='Specific question to solve (1-20)')
+    parser.add_argument('--question', type=int, choices=range(1, 23), help='Specific question to solve (1-21)')
     parser.add_argument('--all', action='store_true', help='Run all calculations')
     parser.add_argument('--report', action='store_true', help='Generate a comprehensive report')
     
@@ -1536,7 +1840,19 @@ def main():
             print("Question 8: Yield to Maturity of a 20-year Bond")
             print(f"Yield to maturity = {result['ytm']:.6f} (semiannual rate) or {result['annual_ytm']*100:.4f}% (annual rate)")
             print(f"Plot saved at: {result['plot_path']}")
+
+        # ===============================================================================================================
         
+        # added by Sree 
+        #elif args.question == 8:
+            #result = calculator.solve_question8_alt()
+            #print("Question 8 Alt: Forward Rate and Price of a 5 Year Zero Coupon Bond")
+            #print(f"Forward Rate = {result['continuous_forward_rate']:.6f}")
+            #print(f"Price 1 year later = {result['zero_coupon_bond_price']}")
+            #print(f"Net Return = {result['net_return']}")
+            #print(f"Plot saved at: {result['plot_path']}")
+        #=================================================================================================================
+    
         elif args.question == 9:
             result = calculator.solve_question9()
             print("Question 9: Bond Pricing with a Given Yield")
@@ -1614,6 +1930,19 @@ def main():
             print("Question 20: Calculate spot rates from bond prices")
             for t, rate in result['spot_rates'].items():
                 print(f"{t}-year semiannual spot rate: {rate:.4f}%")
+            print(f"Plot saved at: {result['plot_path']}")
+
+        elif args.question == 21:
+            result = calculator.ytm_from_prices()
+            print("Question 21: YTM from cash flow")
+            print(f"Semiannual YTM of 4-year coupon bond: {result['semiannual_ytm_percent']:.2f}")
+            print(f"Annualized YTM of 4-year coupon bond: {result['annualized_ytm_percent']:.2f}")
+            print(f"Plot saved at: {result['plot_path']}")
+
+        elif args.question == 22:
+            result = calculator.bond_duration_analysis()
+            print("Question 22: Bond Duration from cash flow")
+            print(f"Bond Duration of 4-year coupon bond: {result['bond_duration']:.2f}")
             print(f"Plot saved at: {result['plot_path']}")
     
     else:
